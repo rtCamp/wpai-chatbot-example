@@ -1,0 +1,60 @@
+# Lint & Typecheck workflow for monorepo (2025 best practices)
+name: Lint & Typecheck
+
+on:
+  pull_request:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: ESLint
+    runs-on: ubuntu-latest
+    steps:
+      - # actions/checkout@v4.2.2
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - # actions/setup-node@v4.4.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
+      - run: npm ci --workspaces --include-workspace-root
+      - run: npm run db:generate
+      - run: npm run lint
+
+  format:
+    name: Prettier Check
+    runs-on: ubuntu-latest
+    steps:
+      - # actions/checkout@v4.2.2
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - # actions/setup-node@v4.4.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
+      - run: npm ci --workspaces --include-workspace-root
+      - run: npm run format:check
+
+  typecheck:
+    name: TS Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - # actions/checkout@v4.2.2
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - # actions/setup-node@v4.4.0
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
+      - run: npm ci --workspaces --include-workspace-root
+      - run: npm run db:generate
+
+      - run: npm run build
+
+      - run: npm run typecheck

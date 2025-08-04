@@ -47,3 +47,6 @@ DOCKERFILE
 coverage/
 *.tsbuildinfo
 .eslintcache
+
+# WordPress is handled separately
+apps/wordpress/
