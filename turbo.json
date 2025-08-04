@@ -1,0 +1,27 @@
+{
+	"$schema": "https://turbo.build/schema.json",
+	"ui": "tui",
+	"tasks": {
+		"build": {
+			"dependsOn": ["^build"],
+			"outputs": [
+				"dist/**",
+				"!dist/cache/**",
+				"node_modules/**",
+				"!node_modules/.cache/**"
+			]
+		},
+		"start:dev": {
+			"persistent": true,
+			"cache": false
+		},
+		"db:generate": {
+			"persistent": false,
+			"cache": false
+		},
+		"typecheck": {
+			"dependsOn": ["^typecheck"],
+			"outputs": []
+		}
+	}
+}

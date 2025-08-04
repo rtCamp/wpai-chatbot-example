@@ -1,0 +1,29 @@
+parameters:
+	level: 8
+	treatPhpDocTypesAsCertain: false
+	inferPrivatePropertyTypeFromConstructor: true
+	checkExplicitMixedMissingReturn: true
+	checkFunctionNameCase: true
+	checkInternalClassCaseSensitivity: true
+	checkTooWideReturnTypesInProtectedAndPublicMethods: true
+	polluteScopeWithAlwaysIterableForeach: false
+	polluteScopeWithLoopInitialAssignments: false
+	reportAlwaysTrueInLastCondition: true
+	reportStaticMethodSignatures: true
+	reportWrongPhpDocTypeInVarTag: true
+
+	bootstrapFiles:
+		- phpstan/constants.php
+	paths:
+		- wpai-chatbot.php
+		- inc/
+	scanDirectories:
+		# Reference the plugins we actually use.
+	excludePaths:
+		analyse:
+			- */vendor/*
+		analyseAndScan:
+			- */node_modules/*
+			- */tests/*
+			- */build/*
+	ignoreErrors:

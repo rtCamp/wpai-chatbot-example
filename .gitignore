@@ -1,0 +1,18 @@
+# Hidden files
+.DS_Store
+.idea
+.vscode
+
+# Dependencies. These should be installed on the users machine
+vendor
+node_modules
+.turbo
+
+# Log files
+.log
+
+# Used for setting local environment variables when testing
+.env
+
+# Weaviate backups - The restore endpoint uses this directory.
+weaviate_backups

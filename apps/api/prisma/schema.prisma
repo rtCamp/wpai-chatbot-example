@@ -1,0 +1,220 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-arm64-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Add this enum before the SystemPrompt model
+enum PromptType {
+  system
+  inference
+  queryProcessor
+}
+
+model Session {
+  id             String    @id @default(cuid())
+  clientId       String    @map("client_id")
+  messages       Message[]
+  openAiThreadId String    @default("")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  user           User?     @relation(fields: [userId], references: [id])
+  userId         String?
+  userTimeZone   String?
+
+  // Optional: Link to the SharedChat from which this session was created
+  originatingSharedChatId String?      @map("originating_shared_chat_id")
+  originatingSharedChat   SharedChat?  @relation("SessionOrigin", fields: [originatingSharedChatId], references: [id])
+
+  // SharedChats created from this session
+  sharedChats SharedChat[]
+
+  @@map("sessions")
+}
+
+model Message {
+  id               String   @id @default(cuid())
+  sessionId        String   @map("session_id")
+  type             String   @default("retrieval")
+  query            String   @default("")
+  retrieval_result String   @default("")
+  summary          String   @default("")
+  response         String   @default("")
+  session          Session  @relation(fields: [sessionId], references: [id])
+  createdAt        DateTime @default(now()) @map("created_at")
+  status           String   @default("pending")
+  searchParams     String   @default("") @map("search_params")
+  pageUrl          String   @default("")
+
+  @@map("messages")
+}
+
+model User {
+  id          String      @id @default(cuid())
+  logtoUserId String      @unique @map("logto_user_id")
+  name        String
+  email       String
+  track_uid   String?     @default("")
+  sessions    Session[]
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model ScrapeRun {
+  id     String @id @default(cuid())
+  url    String @unique
+  params String @default("")
+  cost   Float  @default(0.0)
+  data   String @default("")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("scrape_runs")
+}
+
+model ScrapeUrls {
+	id           String   @id @default(cuid())
+  url          String   @unique
+  status       String   @default("pending")
+  result       String   @default("")
+  errorMessage String   @default("")
+	frequency    String   @default("never")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("scrape_urls")
+}
+
+model ScrapeHistory {
+	id           String   @id @default(cuid())
+  url          String   @unique
+	status       String   @default("pending")
+	errorMessage String   @default("")
+	type         String   @default("single url")
+	content      String   @default("")
+	createdAt    DateTime @default(now()) @map("created_at")
+	updatedAt    DateTime @default(now()) @updatedAt @map("updated_at")
+
+	@@map("scrape_history")
+}
+
+model CrawlUrls {
+	id           String   @id @default(cuid())
+  url          String   @unique
+  status       String   @default("pending")
+  result       String   @default("")
+  errorMessage String   @default("")
+	frequency    String   @default("never")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("crawl_urls")
+}
+
+model CrawlPageUrls {
+	id           String   @id @default(cuid())
+	siteUrl      String   @default("")
+	url          String   @unique
+	status       String   @default("pending")
+  result       String   @default("")
+  errorMessage String   @default("")
+	data         String   @default("")
+	createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+	@@map("crawl_page_urls")
+}
+
+model DocsUrls {
+	id           String   @id @default(cuid())
+  url          String   @unique
+  status       String   @default("pending")
+  result       String   @default("")
+  errorMessage String   @default("")
+	frequency    String   @default("never")
+	data         String   @default("")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("docs_urls")
+}
+
+model CronHistory {
+	id            String   @id @default(cuid())
+	url           String   @unique
+	status        String   @default("pending")
+  logs          String   @default("")
+  errorMessage  String   @default("")
+	createdAt     DateTime @default(now()) @map("created_at")
+  lastScrapedAt DateTime @updatedAt @map("updated_at")
+
+	@@map("cron_history")
+}
+
+model IntegratedWebsites {
+	id           String   @id @default(cuid())
+	url          String   @unique
+	token        String   @default("")
+	collection   String   @default("RtCampCom")
+	status       String   @default("pending")
+	result       String   @default("")
+  errorMessage String   @default("")
+	frequency    String   @default("never")
+	data         String   @default("")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+	@@map("integrated_websites")
+}
+
+model SystemPrompt {
+    id        String     @id @default(cuid())
+    prompt    String     @db.Text
+    type      PromptType @default(system)
+    clientId  String     @map("client_id")
+    createdAt DateTime   @default(now()) @map("created_at")
+    updatedAt DateTime   @updatedAt @map("updated_at")
+
+    @@unique([clientId, type])
+    @@map("system_prompts")
+}
+
+model SharedChat {
+  id           String    @id @default(cuid())
+  sessionId    String    @map("session_id")
+  session      Session   @relation(fields: [sessionId], references: [id], onDelete: Cascade) // Session from which this SharedChat instance was originally created
+  messagesJSON String    @map("messages_json") @db.Text // Store messages as JSON string
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  // Sessions that were created based on this SharedChat
+  sessionsCreatedFromThis Session[] @relation("SessionOrigin")
+
+  @@map("shared_chats")
+}
+
+model PromptPlaceholder {
+  id        String     @id @default(cuid())
+  key       String
+  value     String
+  clientId  String     @map("client_id")
+  type      PromptType @default(system)
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+
+  @@unique([clientId, key, type])
+  @@map("prompt_placeholders")
+}

@@ -1,0 +1,78 @@
+{
+	"name": "@wpai-chatbot/rag",
+	"version": "0.0.1",
+	"description": "",
+	"author": "",
+	"private": true,
+	"main": "dist/index.js",
+	"exports": {
+		".": "./dist/index.js"
+	},
+	"types": "./dist/index.d.ts",
+	"scripts": {
+		"build": "nest build",
+		"format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+		"start": "nest start",
+		"start:dev": "nest start --watch",
+		"start:debug": "nest start --debug --watch",
+		"start:prod": "node dist/main",
+		"lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+		"test": "jest",
+		"test:watch": "jest --watch",
+		"test:cov": "jest --coverage",
+		"test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
+		"test:e2e": "jest --config ./test/jest-e2e.json",
+		"typecheck": "tsc --noEmit"
+	},
+	"dependencies": {
+		"@langchain/core": "^0.3.66",
+		"@nestjs/axios": "^4.0.1",
+		"@nestjs/common": "^11.0.0",
+		"@nestjs/config": "^4.0.2",
+		"@nestjs/core": "^11.0.7",
+		"@nestjs/platform-express": "^11.0.7",
+		"@paralleldrive/cuid2": "^2.2.2",
+		"@pinecone-database/pinecone": "^4.1.0",
+		"axios": "^1.10.0",
+		"langchain": "^0.3.30",
+		"nest-commander": "^3.18.0",
+		"openai": "^4.104.0",
+		"reflect-metadata": "^0.2.2",
+		"rxjs": "^7.8.2",
+		"weaviate-client": "^3.7.0"
+	},
+	"devDependencies": {
+		"@nestjs/cli": "^11.0.2",
+		"@nestjs/schematics": "^11.0.0",
+		"@nestjs/testing": "^11.0.7",
+		"@types/express": "*",
+		"@types/jest": "*",
+		"@types/node": "*",
+		"@types/supertest": "*",
+		"jest": "*",
+		"source-map-support": "^0.5.21",
+		"supertest": "^6.3.4",
+		"ts-jest": "*",
+		"ts-loader": "^9.5.2",
+		"ts-node": "^10.9.2",
+		"tsconfig-paths": "^4.2.0",
+		"typescript": "*"
+	},
+	"jest": {
+		"moduleFileExtensions": [
+			"js",
+			"json",
+			"ts"
+		],
+		"rootDir": "src",
+		"testRegex": ".*\\.spec\\.ts$",
+		"transform": {
+			"^.+\\.(t|j)s$": "ts-jest"
+		},
+		"collectCoverageFrom": [
+			"**/*.(t|j)s"
+		],
+		"coverageDirectory": "../coverage",
+		"testEnvironment": "node"
+	}
+}

@@ -1,0 +1,37 @@
+name: Idea
+description: Have an idea for a new feature or improvement? Share it here!
+title: 'Idea 💡: '
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        Thank you for taking the time to share your idea! Please provide as much detail as possible to help us understand your suggestion.
+  - type: textarea
+    id: what
+    attributes:
+      label: What
+      description: Describe the idea in detail. What is the feature or improvement you are suggesting?
+      placeholder: e.g., Add a new settings page for managing user preferences.
+  - type: textarea
+    id: why
+    attributes:
+      label: Why
+      description: Explain the reasoning behind your idea. Why do you think this feature or improvement is needed?
+      placeholder: e.g., This will help users customize their experience and improve usability.
+  - type: textarea
+    id: how
+    attributes:
+      label: How
+      description: Describe how you envision this feature or improvement being implemented. Include any technical details, code snippets, or links to relevant files.
+      placeholder: e.g., Create a new React component for the settings page and connect it to the existing API.
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Are there any existing solutions or alternatives to this idea? If so, what are they and why do you think they are not sufficient?
+      placeholder: e.g., We could do it in PHP but that would be less efficient and harder to maintain.
+  - type: textarea
+    id: additional-notes
+    attributes:
+      label: Additional Notes
+      description: Include any additional notes, context, considerations.

@@ -1,0 +1,21 @@
+{
+	"$schema": "https://ui.shadcn.com/schema.json",
+	"style": "new-york",
+	"rsc": true,
+	"tsx": true,
+	"tailwind": {
+		"config": "",
+		"css": "src/app/globals.css",
+		"baseColor": "stone",
+		"cssVariables": true,
+		"prefix": ""
+	},
+	"aliases": {
+		"components": "@wpai-chatbot/dashboard/components",
+		"utils": "@wpai-chatbot/dashboard/lib/utils",
+		"ui": "@wpai-chatbot/dashboard/components/ui",
+		"lib": "@wpai-chatbot/dashboard/lib",
+		"hooks": "@wpai-chatbot/dashboard/hooks"
+	},
+	"iconLibrary": "lucide"
+}

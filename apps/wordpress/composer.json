@@ -1,0 +1,56 @@
+{
+	"name": "rtcamp/wpai-chatbot",
+	"type": "wordpress-plugin",
+	"version": "0.0.1",
+	"require": {
+		"php": ">=8.1"
+	},
+	"require-dev": {
+		"automattic/vipwpcs": "^3.0",
+		"phpcompatibility/php-compatibility": "dev-develop as 9.99.99",
+		"phpcompatibility/phpcompatibility-wp": "^2.1",
+		"phpstan/extension-installer": "^1.1",
+		"phpstan/phpstan-deprecation-rules": "^2.0",
+		"phpstan/phpstan": "^2.0.0",
+		"slevomat/coding-standard": "^8.12",
+		"szepeviktor/phpstan-wordpress": "^2.0.0"
+	},
+	"config": {
+		"allow-plugins": {
+			"dealerdirect/phpcodesniffer-composer-installer": true,
+			"phpstan/extension-installer": true
+		},
+		"platform": {
+			"php": "8.1"
+		},
+		"preferred-install": "dist",
+		"process-timeout": 0,
+		"sort-packages": true,
+		"optimize-autoloader": true
+	},
+	"autoload": {
+		"psr-4": {
+			"rtCamp\\WPAI_Chatbot\\": "inc/"
+		}
+	},
+	"autoload-dev": {
+		"psr-4": {
+			"rtCamp\\WPAI_Chatbot\\Tests\\Helper\\": "tests/_support/Helper/",
+			"rtCamp\\WPAI_Chatbot\\Tests\\TestCase\\": "tests/_support/TestCase/"
+		}
+	},
+	"scripts": {
+		"pre-commit": [
+			"npm run lint:staged"
+		],
+		"phpcs": [
+			"php ./vendor/bin/phpcs"
+		],
+		"phpcs:fix": [
+			"php ./vendor/bin/phpcbf"
+		],
+		"phpstan": [
+			"vendor/bin/phpstan analyse"
+		]
+	}
+}

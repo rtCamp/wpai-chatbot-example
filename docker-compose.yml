@@ -1,0 +1,295 @@
+services:
+  api:
+    container_name: wpai-chatbot-api
+    build:
+      context: .
+      dockerfile: ./apps/api/Dockerfile
+    ports:
+      - '3000:3000'
+    volumes:
+      - ./apps/api/src:/app/apps/api/src
+      - ./apps/api/prisma:/app/apps/api/prisma
+      - ./.env:/app/.env
+    environment:
+      - NODE_ENV=${NODE_ENV}
+      - DATABASE_URL=${DATABASE_URL}
+    command: >
+      sh -c "
+        if [ "$NODE_ENV" = "development" ]; then
+          npx prisma db push --accept-data-loss --schema=./apps/api/prisma/schema.prisma --skip-generate &&
+          npm run start:dev -w @wpai-chatbot/api;
+        else
+          npx prisma db push --accept-data-loss --schema=./apps/api/prisma/schema.prisma --skip-generate &&
+          npm run start -w @wpai-chatbot/api;
+        fi"
+    depends_on:
+      - postgres
+      - redis
+      - weaviate
+    restart: always
+    env_file:
+      - .env
+    networks:
+      - wpai-chatbot-network
+    healthcheck:
+      test:
+        ['CMD', 'wget', '--spider', '-S', 'http://localhost:3000/health-check']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+
+  dashboard:
+    container_name: wpai-chatbot-dashboard
+    build:
+      context: .
+      dockerfile: ./apps/dashboard/Dockerfile
+    ports:
+      - '3002:3000'
+    volumes:
+      - dashboard_cache:/app/apps/dashboard/.next
+      - ./apps/dashboard:/app/apps/dashboard
+    environment:
+      - NODE_ENV=${NODE_ENV}
+    depends_on:
+      - api
+    env_file:
+      - .env
+    networks:
+      - wpai-chatbot-network
+    healthcheck:
+      test: ['CMD', 'wget', '--spider', '-S', 'http://localhost:3000/']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+
+  chat:
+    container_name: wpai-chatbot-chat
+    build:
+      context: .
+      dockerfile: ./apps/chat/Dockerfile
+    ports:
+      - '3001:3000'
+    volumes:
+      - chat_cache:/app/apps/chat/.next
+      - ./apps/chat:/app/apps/chat
+    environment:
+      - NODE_ENV=${NODE_ENV}
+    depends_on:
+      - api
+    env_file:
+      - .env
+    networks:
+      - wpai-chatbot-network
+    healthcheck:
+      test: ['CMD', 'wget', '--spider', '-S', 'http://localhost:3000/']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+
+  firecrawl:
+    container_name: firecrawl
+    image: ghcr.io/mendableai/firecrawl:latest
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
+    networks:
+      - wpai-chatbot-network
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    environment:
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      REDIS_RATE_LIMIT_URL: ${REDIS_URL:-redis://redis:6379}
+      HOST: '0.0.0.0'
+      PORT: ${FIRECRAWL_PORT:-3003}
+      FLY_PROCESS_GROUP: app
+    ports:
+      - '${FIRECRAWL_PORT:-3003}:${FIRECRAWL_PORT:-3003}'
+    depends_on:
+      - redis
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "require('http').get('http://localhost:'+(process.env.FIRECRAWL_PORT||3003)+'/serverHealthCheck', res => process.exit(res.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+
+  firecrawl-worker:
+    container_name: firecrawl-worker
+    image: ghcr.io/mendableai/firecrawl:latest
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
+    networks:
+      - wpai-chatbot-network
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    environment:
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      REDIS_RATE_LIMIT_URL: ${REDIS_URL:-redis://redis:6379}
+      HOST: '0.0.0.0'
+      PORT: ${FIRECRAWL_PORT:-3003}
+      FLY_PROCESS_GROUP: worker
+    depends_on:
+      - redis
+      - firecrawl
+
+  postgres:
+    container_name: postgres
+    image: postgres:15
+    ports:
+      - '5432:5432'
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - wpai-chatbot-network
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $POSTGRES_USER -d $POSTGRES_DB']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    container_name: redis
+    image: redis:alpine
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    networks:
+      - wpai-chatbot-network
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  weaviate:
+    container_name: weaviate
+    image: semitechnologies/weaviate:latest
+    ports:
+      - '8080:8080'
+    environment:
+      - QUERY_DEFAULTS_LIMIT=25
+      - PERSISTENCE_MODE=disk
+      - PERSISTENCE_DATA_PATH=/var/lib/weaviate
+      - AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED=true
+      # For standalone mode
+      - CLUSTER_HOSTNAME='node1'
+      # You may have to set GOMEMLIMIT to prevent OOM kills
+      - GOMEMLIMIT=3072MiB
+      # Backup Configuration
+      - ENABLE_MODULES=backup-filesystem
+      - BACKUP_FILESYSTEM_PATH=/var/lib/weaviate/backups
+    volumes:
+      - weaviate_data:/var/lib/weaviate
+      # Host mount the backup dir to make things easier to work with
+      - ../weaviate_backups:/var/lib/weaviate/backups
+    networks:
+      - wpai-chatbot-network
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'wget',
+          '--spider',
+          '-S',
+          'http://localhost:8080/v1/.well-known/ready',
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+
+  # Uncomment if you want to use the Weaviate Console
+  # weaviate-console:
+  #   container_name: weaviate-console
+  #   image: semitechnologies/weaviate-console:latest
+  #   ports:
+  #     - "8081:80"
+  #   environment:
+  #     - WEAVIATE_URI=http://weaviate:8080
+  #   depends_on:
+  #     - weaviate
+  #   networks:
+  #     - wpai-chatbot-network
+
+  logto:
+    depends_on:
+      logto-postgres:
+        condition: service_healthy
+    container_name: logto
+    image: svhd/logto:${TAG-latest}
+    entrypoint: ['sh', '-c', 'npm run cli db seed -- --swe && npm start']
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      TRUST_PROXY_HEADER: ${LOGTO_TRUST_PROXY_HEADER}
+      DB_URL: ${LOGTO_DB_URL}
+      PORT: ${LOGTO_CORE_PORT}
+      ADMIN_PORT: ${LOGTO_ADMIN_PORT}
+      ENDPOINT: ${LOGTO_ENDPOINT}
+      ADMIN_ENDPOINT: ${LOGTO_ADMIN_ENDPOINT}
+    ports:
+      - ${LOGTO_CORE_PORT}:${LOGTO_CORE_PORT}
+      - ${LOGTO_ADMIN_PORT}:${LOGTO_ADMIN_PORT}
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'wget',
+          '--spider',
+          '-S',
+          'http://localhost:${LOGTO_CORE_PORT}/',
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+
+  logto-postgres:
+    container_name: logto-postgres
+    image: postgres:17-alpine
+    user: postgres
+    env_file:
+      - .env
+    ports:
+      - 5433:5432
+    environment:
+      POSTGRES_DB: ${LOGTO_POSTGRES_DB}
+      POSTGRES_USER: ${LOGTO_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${LOGTO_POSTGRES_PASSWORD}
+    volumes:
+      - logto_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+  redis_data:
+  weaviate_data:
+  logto_postgres_data:
+  chat_cache:
+  dashboard_cache:
+
+networks:
+  wpai-chatbot-network:
+    driver: bridge
