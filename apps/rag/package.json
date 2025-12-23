@@ -25,7 +25,7 @@
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
-		"@langchain/core": "^0.3.66",
+		"@langchain/core": "^0.3.80",
 		"@nestjs/axios": "^4.0.1",
 		"@nestjs/common": "^11.0.0",
 		"@nestjs/config": "^4.0.2",
