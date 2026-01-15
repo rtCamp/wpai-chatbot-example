@@ -37,7 +37,7 @@
 		"class-transformer": "^0.5.1",
 		"class-validator": "^0.14.2",
 		"cluster": "^0.7.7",
-		"diff": "^8.0.2",
+		"diff": "^8.0.3",
 		"googleapis": "^148.0.0",
 		"luxon": "^3.7.1",
 		"marked": "^15.0.12",
