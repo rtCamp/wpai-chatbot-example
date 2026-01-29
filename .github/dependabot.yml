@@ -4,7 +4,8 @@ updates:
   # Composer: 1x weekly for minor/patch, 1x monthly for major.
   - package-ecosystem: 'composer'
     directories:
-      - '/apps/wordpress/*'
+      - '/apps/wordpress/composer.json'
+      - '/apps/wordpress/composer.lock'
     schedule:
       interval: 'weekly'
     cooldown:
@@ -26,7 +27,14 @@ updates:
   # NPM: 1x weekly for minor/patch, 1x monthly for major.
   - package-ecosystem: 'npm'
     directories:
-      - '/'
+      - '/package.json'
+      - '/package-lock.json'
+      - '/apps/api/package.json'
+      - '/apps/chat/package.json'
+      - '/apps/dashboard/package.json'
+      - '/apps/rag/package.json'
+      - '/apps/wordpress/package.json'
+      - '/apps/wordpress/package-lock.json'
       # @todo add other plugin directories when their dependency trees are stabilized.
     schedule:
       interval: 'weekly'
@@ -52,7 +60,11 @@ updates:
 
   # Docker: 1x weekly.
   - package-ecosystem: 'docker'
-    directory: '/'
+    directories:
+      - '/apps/api/Dockerfile'
+      - '/apps/chat/Dockerfile'
+      - '/apps/dashboard/Dockerfile'
+      - '/apps/nlp/Dockerfile'
     schedule:
       interval: 'weekly'
     groups:
@@ -62,7 +74,7 @@ updates:
   # PIP: 1x weekly for minor/patch, 1x monthly for major.
   - package-ecosystem: 'pip'
     directories:
-      - '/'
+      - '/apps/nlp/requirements.txt'
     schedule:
       interval: 'weekly'
     cooldown:
