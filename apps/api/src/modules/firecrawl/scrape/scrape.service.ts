@@ -16,6 +16,7 @@ import { google } from 'googleapis';
 import { marked } from 'marked';
 import * as sanitizeHtml from 'sanitize-html';
 import { randomBytes } from 'crypto';
+import * as dns from 'dns';
 
 export interface FirecrawlResponse {
 	url: string;
@@ -1571,6 +1572,78 @@ export class ScrapeService {
 		}
 	}
 
+	private async validateExternalUrl(rawUrl: string): Promise<string> {
+		let parsed: URL;
+		try {
+			parsed = new URL(rawUrl);
+		} catch {
+			throw new BadRequestException('Invalid URL format.');
+		}
+
+		if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+			throw new BadRequestException('Only HTTP and HTTPS URLs are allowed.');
+		}
+
+		const hostname = parsed.hostname;
+
+		// Disallow obvious localhost hosts before DNS resolution
+		if (
+			hostname === 'localhost' ||
+			hostname === '127.0.0.1' ||
+			hostname === '::1'
+		) {
+			throw new BadRequestException('Localhost URLs are not allowed.');
+		}
+
+		let address: string;
+		try {
+			const lookupResult = await dns.promises.lookup(hostname, { all: false });
+			address = lookupResult.address;
+		} catch {
+			// If hostname cannot be resolved, treat as bad input
+			throw new BadRequestException('Unable to resolve URL host.');
+		}
+
+		const isPrivateIpv4 = (ip: string): boolean => {
+			const octets = ip.split('.').map(Number);
+			if (octets.length !== 4 || octets.some((o) => Number.isNaN(o))) {
+				return false;
+			}
+
+			// 10.0.0.0/8
+			if (octets[0] === 10) return true;
+			// 172.16.0.0/12
+			if (octets[0] === 172 && octets[1] >= 16 && octets[1] <= 31) return true;
+			// 192.168.0.0/16
+			if (octets[0] === 192 && octets[1] === 168) return true;
+			// 127.0.0.0/8
+			if (octets[0] === 127) return true;
+			// 169.254.0.0/16 (link-local)
+			if (octets[0] === 169 && octets[1] === 254) return true;
+
+			return false;
+		};
+
+		const isPrivateIpv6 = (ip: string): boolean => {
+			const normalized = ip.toLowerCase();
+			// Loopback
+			if (normalized === '::1') return true;
+			// Unique local addresses fc00::/7
+			return normalized.startsWith('fc') || normalized.startsWith('fd');
+		};
+
+		// Very simple heuristic to distinguish IPv4 / IPv6 strings
+		const isPrivate =
+			address.includes('.') ? isPrivateIpv4(address) : isPrivateIpv6(address);
+
+		if (isPrivate) {
+			throw new BadRequestException('URL host must be a public address.');
+		}
+
+		// Return the normalized absolute URL string
+		return parsed.toString().replace(/\/$/, '');
+	}
+
 	private async createAndSendToken(url: string) {
 		const pingUrl = `${url.replace(/\/$/, '')}/wp-json/wpai-chatbot/v1/ping`;
 		try {
@@ -1640,9 +1713,11 @@ export class ScrapeService {
 
 	async addIntegratedWebsite(url: string) {
 		try {
+			const safeUrl = await this.validateExternalUrl(url);
+
 			const existingUrl = await this.prisma.integratedWebsites.findUnique(
 				{
-					where: { url },
+					where: { url: safeUrl },
 				},
 			);
 			if (existingUrl) {
@@ -1651,15 +1726,15 @@ export class ScrapeService {
 				);
 			}
 
-			const token = await this.createAndSendToken(url);
+			const token = await this.createAndSendToken(safeUrl);
 
 			const result = await this.prisma.integratedWebsites.upsert({
-				where: { url },
+				where: { url: safeUrl },
 				update: {},
-				create: { url, token, updatedAt: new Date() },
+				create: { url: safeUrl, token, updatedAt: new Date() },
 			});
 
-			const { hostname, pathname } = new URL(url);
+			const { hostname, pathname } = new URL(safeUrl);
 			const cleanPath = pathname.replace(/^\/|\/$/g, '');
 			const domain = cleanPath ? `${hostname}/${cleanPath}` : hostname;
 			const safeDomain = this.toPascalCase(domain);
@@ -1670,7 +1745,7 @@ export class ScrapeService {
 			}
 
 			await this.prisma.integratedWebsites.update({
-				where: { url },
+				where: { url: safeUrl },
 				data: { collection },
 			});
 
