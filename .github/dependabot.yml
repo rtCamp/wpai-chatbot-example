@@ -1,34 +1,85 @@
 version: 2
+
 updates:
-  - package-ecosystem: "composer"
-    directory: "/"
+  # Composer: 1x weekly for minor/patch, 1x monthly for major.
+  - package-ecosystem: 'composer'
+    directories:
+      - '/apps/wordpress/'
     schedule:
-      interval: "daily"
-  - package-ecosystem: "npm"
-    directory: "/"
+      interval: 'weekly'
+    cooldown:
+      semver-major-days: 30
+      semver-minor-days: 7
+      semver-patch-days: 7
+    groups:
+      composer-dev-minor-patch:
+        dependency-type: 'development'
+        update-types: [minor, patch]
+      composer-dev-major:
+        dependency-type: 'development'
+        update-types: [major]
+      # We don't bundle minor or major production assets, so they're tested individually.
+      composer-patch:
+        dependency-type: 'production'
+        update-types: [patch]
+
+  # NPM: 1x weekly for minor/patch, 1x monthly for major.
+  - package-ecosystem: 'npm'
+    directories:
+      - '/'
+      - '/apps/api/'
+      - '/apps/chat/'
+      - '/apps/dashboard/'
+      - '/apps/rag/'
+      - '/apps/wordpress/'
+      # @todo add other plugin directories when their dependency trees are stabilized.
     schedule:
-      interval: "daily"
-  - package-ecosystem: "docker"
-    directory: "/"
+      interval: 'weekly'
+    cooldown:
+      semver-major-days: 30
+      semver-minor-days: 7
+      semver-patch-days: 7
+    groups:
+      npm-minor-patch:
+        update-types: [minor, patch]
+      npm-dev-major:
+        dependency-type: 'development'
+        update-types: [major]
+
+  # GitHub Actions: 1x weekly.
+  - package-ecosystem: 'github-actions'
+    directory: '/'
     schedule:
-      interval: "monthly"
-  - package-ecosystem: "pip"
-    directory: "/"
+      interval: 'weekly'
+    groups:
+      github-actions-updates:
+        patterns: ['*']
+
+  # Docker: 1x weekly.
+  - package-ecosystem: 'docker'
+    directories:
+      - '/apps/api/'
+      - '/apps/chat/'
+      - '/apps/dashboard/'
+      - '/apps/nlp/'
     schedule:
-      interval: "daily"
-  - package-ecosystem: "bundler"
-    directory: "/"
+      interval: 'weekly'
+    groups:
+      docker-updates:
+        patterns: ['*']
+
+  # PIP: 1x weekly for minor/patch, 1x monthly for major.
+  - package-ecosystem: 'pip'
+    directories:
+      - '/apps/nlp/'
     schedule:
-      interval: "daily"
-  - package-ecosystem: "gomod"
-    directory: "/"
-    schedule:
-      interval: "daily"
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    schedule:
-      interval: "daily"
-  - package-ecosystem: "terraform"
-    directory: "/"
-    schedule:
-      interval: "daily"
+      interval: 'weekly'
+    cooldown:
+      semver-major-days: 30
+      semver-minor-days: 7
+      semver-patch-days: 7
+    groups:
+      pip-minor-patch:
+        update-types: [minor, patch]
+      pip-major:
+        update-types: [major]
