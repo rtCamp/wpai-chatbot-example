@@ -49,3 +49,28 @@ updates:
     groups:
       github-actions-updates:
         patterns: ['*']
+
+  # Docker: 1x weekly.
+  - package-ecosystem: 'docker'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+    groups:
+      docker-updates:
+        patterns: ['*']
+
+  # PIP: 1x weekly for minor/patch, 1x monthly for major.
+  - package-ecosystem: 'pip'
+    directories:
+      - '/'
+    schedule:
+      interval: 'weekly'
+    cooldown:
+      semver-major-days: 30
+      semver-minor-days: 7
+      semver-patch-days: 7
+    groups:
+      pip-minor-patch:
+        update-types: [minor, patch]
+      pip-major:
+        update-types: [major]
