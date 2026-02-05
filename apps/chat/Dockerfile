@@ -1,4 +1,4 @@
-FROM node:22-alpine AS base_image
+FROM node:25-alpine AS base_image
 
 # Don't run production as root
 RUN addgroup --system --gid 1001 nextjs && \
