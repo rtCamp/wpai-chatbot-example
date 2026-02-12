@@ -27,10 +27,10 @@
 	"dependencies": {
 		"@langchain/core": "^0.3.80",
 		"@nestjs/axios": "^4.0.1",
-		"@nestjs/common": "^11.1.12",
-		"@nestjs/config": "^4.0.2",
-		"@nestjs/core": "^11.1.12",
-		"@nestjs/platform-express": "^11.1.12",
+		"@nestjs/common": "^11.1.13",
+		"@nestjs/config": "^4.0.3",
+		"@nestjs/core": "^11.1.13",
+		"@nestjs/platform-express": "^11.1.13",
 		"@paralleldrive/cuid2": "^2.3.1",
 		"@pinecone-database/pinecone": "^4.1.0",
 		"axios": "^1.13.4",
@@ -44,7 +44,7 @@
 	"devDependencies": {
 		"@nestjs/cli": "^11.0.16",
 		"@nestjs/schematics": "^11.0.9",
-		"@nestjs/testing": "^11.1.12",
+		"@nestjs/testing": "^11.1.13",
 		"@types/express": "*",
 		"@types/jest": "*",
 		"@types/node": "*",
